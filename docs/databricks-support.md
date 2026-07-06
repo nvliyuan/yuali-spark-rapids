@@ -1,15 +1,16 @@
 ---
 layout: page
 title: Databricks Support Matrix
-nav_order: 4
+parent: Download
+nav_order: 1
 ---
 
 # Databricks Support Matrix
 
-This page summarizes the Databricks runtime combinations supported by the
-current RAPIDS Accelerator release. Use it together with the
-[Download](./download.md) page to select the correct plugin artifact before
-deploying to a Databricks cluster.
+This page summarizes the Databricks runtime combinations with detailed
+Databricks-specific coverage for the current RAPIDS Accelerator release. Use it
+together with the [Download](./download.md) page to select the correct plugin
+artifact before deploying to a Databricks cluster.
 
 ## Runtime Compatibility
 
@@ -20,7 +21,6 @@ otherwise.
 
 | RAPIDS Accelerator | Databricks Runtime | Apache Spark | Scala | JDK runtime | CUDA jar variants | Minimum NVIDIA driver | Notes |
 |--------------------|--------------------|--------------|-------|-------------|-------------------|-----------------------|-------|
-| v26.06.0 | 13.3 ML LTS GPU | 3.4.1 | 2.12 | Databricks runtime default | CUDA 12, CUDA 13 | R525+ | Supported Databricks 13.3 runtime line. |
 | v26.06.0 | 14.3 ML LTS GPU | 3.5.0 | 2.12 | Databricks runtime default | CUDA 12, CUDA 13 | R525+ | Supported Databricks 14.3 runtime line. |
 | v26.06.0 | 17.3 ML LTS GPU | 4.0.0 | 2.13 | Databricks runtime default | CUDA 12, CUDA 13 | R525+ | Spark 4 / Scala 2.13 Databricks runtime line. |
 
@@ -33,8 +33,8 @@ compatibility of the artifact.
 ## Delta Lake GPU Support on Databricks
 
 Databricks runtimes use Databricks-specific Delta Lake implementations. The
-following table summarizes Delta Lake GPU support for the Databricks runtime
-lines with feature-specific coverage in the current release. `GPU` means the
+following table summarizes v26.06 Delta Lake GPU support for the Databricks
+runtime lines with feature-specific coverage in this page. `GPU` means the
 operation is expected to run on the GPU when the rest of the query plan is also
 GPU-compatible. `CPU fallback` means the RAPIDS Accelerator leaves that Delta
 operation on the CPU for that runtime.
@@ -50,6 +50,12 @@ operation on the CPU for that runtime.
 | OPTIMIZE | CPU fallback | GPU for standard deletion-vector-free, non-liquid-clustered tables only |
 | Auto compaction | GPU when triggered by supported GPU writes | GPU for inline deletion-vector-free, non-liquid-clustered tables only |
 | Liquid clustering | GPU support | CPU fallback |
+
+For DBR 17.3, deletion-vector reads require the metadata row index and RAPIDS
+deletion-vector predicate pushdown path to remain GPU-compatible. Liquid
+clustering support for DBR 17.3 is planned for the v26.08 release line and is
+tracked by [#14599](https://github.com/NVIDIA/cudf-spark/issues/14599); the
+v26.06 behavior remains CPU fallback for liquid-clustered paths on DBR 17.3.
 
 ## Compatibility Caveats
 

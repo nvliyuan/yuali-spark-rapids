@@ -2,6 +2,7 @@
 layout: page
 title: Download
 nav_order: 3
+has_children: true
 ---
 
 The [RAPIDS Accelerator for Apache Spark](https://github.com/NVIDIA/spark-rapids) provides a set of
