@@ -3193,9 +3193,9 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
         | when the config can be set. "Startup" means only valid on startup, "Runtime" means
         | valid on both startup and runtime.
         |
-        | The "Since Version" column shows the first RAPIDS Accelerator release known to support
-        | the config. "Unreleased" means the config exists on this branch but is not in a tagged
-        | release yet. "Unknown" means the metadata has not been recorded yet.
+        |The "Since Version" column shows the first RAPIDS Accelerator release known to support
+        |the config. "Unreleased" means the config exists on this branch but is not in a tagged
+        |release yet. "Unknown" means the metadata has not been recorded yet.
         |""".stripMargin)
       // scalastyle:on line.size.limit
       println("\n## General Configuration\n")
@@ -3234,9 +3234,9 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
         |
         |The following configuration options are supported by the RAPIDS Accelerator for Apache Spark.
         |
-        | The "Since Version" column shows the first RAPIDS Accelerator release known to support
-        | the config. "Unreleased" means the config exists on this branch but is not in a tagged
-        | release yet. "Unknown" means the metadata has not been recorded yet.
+        |The "Since Version" column shows the first RAPIDS Accelerator release known to support
+        |the config. "Unreleased" means the config exists on this branch but is not in a tagged
+        |release yet. "Unknown" means the metadata has not been recorded yet.
         |
         |For commonly used configurations and examples of setting options, please refer to the
         |[RAPIDS Accelerator for Configuration](../configs.md) page.

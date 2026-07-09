@@ -17,7 +17,9 @@ They are documented here for completeness and advanced usage.
 
 The following configuration options are supported by the RAPIDS Accelerator for Apache Spark.
 
-The "Since Version" column shows the first RAPIDS Accelerator release known to support the config. "Unreleased" means the config exists on this branch but is not in a tagged release yet. "Unknown" means the metadata has not been recorded yet.
+The "Since Version" column shows the first RAPIDS Accelerator release known to support
+the config. "Unreleased" means the config exists on this branch but is not in a tagged
+release yet. "Unknown" means the metadata has not been recorded yet.
 
 
 For commonly used configurations and examples of setting options, please refer to the
