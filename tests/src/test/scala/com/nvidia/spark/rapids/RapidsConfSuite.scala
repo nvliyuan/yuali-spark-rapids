@@ -27,13 +27,11 @@ class RapidsConfSuite extends AnyFunSuite {
     val entry = new ConfBuilder("spark.rapids.test.versioned", e => registered = Some(e))
       .doc("test doc")
       .sinceVersion("26.08")
-      .versionNotes("renamed from spark.rapids.test.old")
       .stringConf
       .createWithDefault("enabled")
 
     assert(registered.contains(entry))
     assertResult("26.08")(entry.versionInfo.sinceVersion)
-    assertResult("renamed from spark.rapids.test.old")(entry.versionInfo.notes)
 
     val out = new ByteArrayOutputStream()
     Console.withOut(out) {
@@ -42,18 +40,26 @@ class RapidsConfSuite extends AnyFunSuite {
 
     assertResult(
       "<a name=\"test.versioned\"></a>spark.rapids.test.versioned|" +
-        "test doc|enabled|Runtime|26.08|renamed from spark.rapids.test.old\n") {
+        "test doc|enabled|Runtime|26.08\n") {
       out.toString("UTF-8")
     }
   }
 
-  test("config version metadata defaults to unknown") {
+  test("config version metadata defaults to history lookup") {
+    val entry = new ConfBuilder("spark.rapids.sql.enabled", _ => ())
+      .doc("test doc")
+      .booleanConf
+      .createWithDefault(false)
+
+    assert(entry.versionInfo.sinceVersion.startsWith("v"))
+  }
+
+  test("unknown config version metadata remains explicit") {
     val entry = new ConfBuilder("spark.rapids.test.unknown", _ => ())
       .doc("test doc")
       .booleanConf
       .createWithDefault(false)
 
     assertResult(ConfVersionInfo.UNKNOWN_VERSION)(entry.versionInfo.sinceVersion)
-    assertResult("")(entry.versionInfo.notes)
   }
 }

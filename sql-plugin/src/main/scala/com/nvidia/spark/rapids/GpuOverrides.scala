@@ -210,7 +210,7 @@ abstract class ReplacementRule[INPUT <: BASE, BASE, WRAP_TYPE <: RapidsMeta[INPU
         } else {
           print("None")
         }
-        println(s"|${ConfVersionInfo.UNKNOWN_VERSION}|")
+        println(s"|${ConfVersionInfo.forKey(confKey).sinceVersion}")
       } else {
         println(s"$confKey:")
         println(s"\tEnable (true) or disable (false) the $tag $operationName.")

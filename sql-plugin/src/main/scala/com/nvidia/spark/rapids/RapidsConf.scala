@@ -121,15 +121,6 @@ object ConfHelper {
   }
 }
 
-case class ConfVersionInfo(
-    sinceVersion: String = ConfVersionInfo.UNKNOWN_VERSION,
-    notes: String = "")
-
-object ConfVersionInfo {
-  val UNKNOWN_VERSION = "Unknown"
-  val NONE = ConfVersionInfo()
-}
-
 abstract class ConfEntry[T](val key: String, val converter: String => T, val doc: String,
     val isInternal: Boolean, val isStartUpOnly: Boolean, val isCommonlyUsed: Boolean,
     val versionInfo: ConfVersionInfo) {
@@ -143,7 +134,7 @@ abstract class ConfEntry[T](val key: String, val converter: String => T, val doc
 
 class ConfEntryWithDefault[T](key: String, converter: String => T, doc: String,
     isInternal: Boolean, isStartupOnly: Boolean, isCommonlyUsed: Boolean = false,
-    val defaultValue: T, versionInfo: ConfVersionInfo = ConfVersionInfo.NONE)
+    val defaultValue: T, versionInfo: ConfVersionInfo = ConfVersionInfo.UNKNOWN)
   extends ConfEntry[T](key, converter, doc, isInternal, isStartupOnly, isCommonlyUsed,
     versionInfo) {
 
@@ -166,7 +157,7 @@ class ConfEntryWithDefault[T](key: String, converter: String => T, doc: String,
       if (asTable) {
         import ConfHelper.makeConfAnchor
         println(s"${makeConfAnchor(key)}|$doc|$defaultValue|$startupOnlyStr|" +
-          s"${versionInfo.sinceVersion}|${versionInfo.notes}")
+          s"${versionInfo.sinceVersion}")
       } else {
         println(s"$key:")
         println(s"\t$doc")
@@ -180,7 +171,7 @@ class ConfEntryWithDefault[T](key: String, converter: String => T, doc: String,
 
 class OptionalConfEntry[T](key: String, val rawConverter: String => T, doc: String,
     isInternal: Boolean, isStartupOnly: Boolean, isCommonlyUsed: Boolean = false,
-    versionInfo: ConfVersionInfo = ConfVersionInfo.NONE)
+    versionInfo: ConfVersionInfo = ConfVersionInfo.UNKNOWN)
   extends ConfEntry[Option[T]](key, s => Some(rawConverter(s)), doc, isInternal,
   isStartupOnly, isCommonlyUsed, versionInfo) {
 
@@ -203,7 +194,7 @@ class OptionalConfEntry[T](key: String, val rawConverter: String => T, doc: Stri
       if (asTable) {
         import ConfHelper.makeConfAnchor
         println(s"${makeConfAnchor(key)}|$doc|None|$startupOnlyStr|" +
-          s"${versionInfo.sinceVersion}|${versionInfo.notes}")
+          s"${versionInfo.sinceVersion}")
       } else {
         println(s"$key:")
         println(s"\t$doc")
@@ -284,7 +275,7 @@ class ConfBuilder(val key: String, val register: ConfEntry[_] => Unit) {
   var isInternal: Boolean = false
   var isStartupOnly: Boolean = false
   var isCommonlyUsed: Boolean = false
-  var versionInfo: ConfVersionInfo = ConfVersionInfo.NONE
+  var versionInfo: ConfVersionInfo = ConfVersionInfo.forKey(key)
 
   def doc(data: String): ConfBuilder = {
     this.doc = data
@@ -307,12 +298,7 @@ class ConfBuilder(val key: String, val register: ConfEntry[_] => Unit) {
   }
 
   def sinceVersion(version: String): ConfBuilder = {
-    this.versionInfo = this.versionInfo.copy(sinceVersion = version)
-    this
-  }
-
-  def versionNotes(notes: String): ConfBuilder = {
-    this.versionInfo = this.versionInfo.copy(notes = notes)
+    this.versionInfo = ConfVersionInfo(version)
     this
   }
 
@@ -602,9 +588,6 @@ val GPU_COREDUMP_PIPE_PATTERN = conf("spark.rapids.gpu.coreDump.pipePattern")
         "spark.rapids.memory.host.offHeapLimit.size, which will take precedence if set.")
     .startupOnly()
     .commonlyUsed()
-    .versionNotes("Deprecated in favor of spark.rapids.memory.host.offHeapLimit.enabled/" +
-      "spark.rapids.memory.host.offHeapLimit.size. The off-heap limit configs take precedence " +
-      "when enabled.")
     .bytesConf(ByteUnit.BYTE)
     .createWithDefault(-1)
 
@@ -3164,14 +3147,14 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
 
   private def printToggleHeader(category: String): Unit = {
     printSectionHeader(category)
-    println("Name | Description | Default Value | Notes | Since Version | Version Notes")
-    println("-----|-------------|---------------|-------|---------------|--------------")
+    println("Name | Description | Default Value | Notes | Since Version")
+    println("-----|-------------|---------------|-------|--------------")
   }
 
   private def printToggleHeaderWithSqlFunction(category: String): Unit = {
     printSectionHeader(category)
-    println("Name | SQL Function(s) | Description | Default Value | Notes | Since Version | Version Notes")
-    println("-----|-----------------|-------------|---------------|-------|---------------|--------------")
+    println("Name | SQL Function(s) | Description | Default Value | Notes | Since Version")
+    println("-----|-----------------|-------------|---------------|-------|--------------")
   }
 
   def help(asTable: Boolean = false): Unit = {
@@ -3210,13 +3193,14 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
         | when the config can be set. "Startup" means only valid on startup, "Runtime" means
         | valid on both startup and runtime.
         |
-        | The "Since Version" column shows when version compatibility metadata is available for
-        | a config. "Unknown" means the metadata has not been recorded yet.
+        | The "Since Version" column shows the first RAPIDS Accelerator release known to support
+        | the config. "Unreleased" means the config exists on this branch but is not in a tagged
+        | release yet. "Unknown" means the metadata has not been recorded yet.
         |""".stripMargin)
       // scalastyle:on line.size.limit
       println("\n## General Configuration\n")
-      println("Name | Description | Default Value | Applicable at | Since Version | Version Notes")
-      println("-----|-------------|--------------|---------------|---------------|--------------")
+      println("Name | Description | Default Value | Applicable at | Since Version")
+      println("-----|-------------|--------------|---------------|--------------")
     } else {
       println("Commonly Used Rapids Configs:")
     }
@@ -3250,10 +3234,9 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
         |
         |The following configuration options are supported by the RAPIDS Accelerator for Apache Spark.
         |
-        | The "Since Version" column shows when version compatibility metadata is available for
-        | a config. "Unknown" means the metadata has not been recorded yet. The "Version Notes"
-        | column calls out deprecations, replacements, removals, or other compatibility caveats
-        | when known.
+        | The "Since Version" column shows the first RAPIDS Accelerator release known to support
+        | the config. "Unreleased" means the config exists on this branch but is not in a tagged
+        | release yet. "Unknown" means the metadata has not been recorded yet.
         |
         |For commonly used configurations and examples of setting options, please refer to the
         |[RAPIDS Accelerator for Configuration](../configs.md) page.
@@ -3261,8 +3244,8 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
       // scalastyle:on line.size.limit
       println("\n## Advanced Configuration\n")
 
-      println("Name | Description | Default Value | Applicable at | Since Version | Version Notes")
-      println("-----|-------------|--------------|---------------|---------------|--------------")
+      println("Name | Description | Default Value | Applicable at | Since Version")
+      println("-----|-------------|--------------|---------------|--------------")
     } else {
       println("Advanced Rapids Configs:")
     }
