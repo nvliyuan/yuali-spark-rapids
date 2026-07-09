@@ -121,8 +121,18 @@ object ConfHelper {
   }
 }
 
+case class ConfVersionInfo(
+    sinceVersion: String = ConfVersionInfo.UNKNOWN_VERSION,
+    notes: String = "")
+
+object ConfVersionInfo {
+  val UNKNOWN_VERSION = "Unknown"
+  val NONE = ConfVersionInfo()
+}
+
 abstract class ConfEntry[T](val key: String, val converter: String => T, val doc: String,
-    val isInternal: Boolean, val isStartUpOnly: Boolean, val isCommonlyUsed: Boolean) {
+    val isInternal: Boolean, val isStartUpOnly: Boolean, val isCommonlyUsed: Boolean,
+    val versionInfo: ConfVersionInfo) {
 
   def get(conf: Map[String, String]): T
   def get(conf: SQLConf): T
@@ -133,8 +143,9 @@ abstract class ConfEntry[T](val key: String, val converter: String => T, val doc
 
 class ConfEntryWithDefault[T](key: String, converter: String => T, doc: String,
     isInternal: Boolean, isStartupOnly: Boolean, isCommonlyUsed: Boolean = false,
-    val defaultValue: T)
-  extends ConfEntry[T](key, converter, doc, isInternal, isStartupOnly, isCommonlyUsed) {
+    val defaultValue: T, versionInfo: ConfVersionInfo = ConfVersionInfo.NONE)
+  extends ConfEntry[T](key, converter, doc, isInternal, isStartupOnly, isCommonlyUsed,
+    versionInfo) {
 
   override def get(conf: Map[String, String]): T = {
     conf.get(key).map(converter).getOrElse(defaultValue)
@@ -154,7 +165,8 @@ class ConfEntryWithDefault[T](key: String, converter: String => T, doc: String,
       val startupOnlyStr = if (isStartupOnly) "Startup" else "Runtime"
       if (asTable) {
         import ConfHelper.makeConfAnchor
-        println(s"${makeConfAnchor(key)}|$doc|$defaultValue|$startupOnlyStr")
+        println(s"${makeConfAnchor(key)}|$doc|$defaultValue|$startupOnlyStr|" +
+          s"${versionInfo.sinceVersion}|${versionInfo.notes}")
       } else {
         println(s"$key:")
         println(s"\t$doc")
@@ -167,9 +179,10 @@ class ConfEntryWithDefault[T](key: String, converter: String => T, doc: String,
 }
 
 class OptionalConfEntry[T](key: String, val rawConverter: String => T, doc: String,
-    isInternal: Boolean, isStartupOnly: Boolean, isCommonlyUsed: Boolean = false)
+    isInternal: Boolean, isStartupOnly: Boolean, isCommonlyUsed: Boolean = false,
+    versionInfo: ConfVersionInfo = ConfVersionInfo.NONE)
   extends ConfEntry[Option[T]](key, s => Some(rawConverter(s)), doc, isInternal,
-  isStartupOnly, isCommonlyUsed) {
+  isStartupOnly, isCommonlyUsed, versionInfo) {
 
   override def get(conf: Map[String, String]): Option[T] = {
     conf.get(key).map(rawConverter)
@@ -189,7 +202,8 @@ class OptionalConfEntry[T](key: String, val rawConverter: String => T, doc: Stri
       val startupOnlyStr = if (isStartupOnly) "Startup" else "Runtime"
       if (asTable) {
         import ConfHelper.makeConfAnchor
-        println(s"${makeConfAnchor(key)}|$doc|None|$startupOnlyStr")
+        println(s"${makeConfAnchor(key)}|$doc|None|$startupOnlyStr|" +
+          s"${versionInfo.sinceVersion}|${versionInfo.notes}")
       } else {
         println(s"$key:")
         println(s"\t$doc")
@@ -241,7 +255,8 @@ class TypedConfBuilder[T](
     // then 'converter' will throw an exception
     val transformedValue = converter(stringConverter(value))
     val ret = new ConfEntryWithDefault[T](parent.key, converter,
-      parent.doc, parent.isInternal, parent.isStartupOnly, parent.isCommonlyUsed, transformedValue)
+      parent.doc, parent.isInternal, parent.isStartupOnly, parent.isCommonlyUsed, transformedValue,
+      parent.versionInfo)
     parent.register(ret)
     ret
   }
@@ -254,7 +269,8 @@ class TypedConfBuilder[T](
 
   def createOptional: OptionalConfEntry[T] = {
     val ret = new OptionalConfEntry[T](parent.key, converter,
-      parent.doc, parent.isInternal, parent.isStartupOnly, parent.isCommonlyUsed)
+      parent.doc, parent.isInternal, parent.isStartupOnly, parent.isCommonlyUsed,
+      parent.versionInfo)
     parent.register(ret)
     ret
   }
@@ -268,6 +284,7 @@ class ConfBuilder(val key: String, val register: ConfEntry[_] => Unit) {
   var isInternal: Boolean = false
   var isStartupOnly: Boolean = false
   var isCommonlyUsed: Boolean = false
+  var versionInfo: ConfVersionInfo = ConfVersionInfo.NONE
 
   def doc(data: String): ConfBuilder = {
     this.doc = data
@@ -286,6 +303,16 @@ class ConfBuilder(val key: String, val register: ConfEntry[_] => Unit) {
 
   def commonlyUsed(): ConfBuilder = {
     this.isCommonlyUsed = true
+    this
+  }
+
+  def sinceVersion(version: String): ConfBuilder = {
+    this.versionInfo = this.versionInfo.copy(sinceVersion = version)
+    this
+  }
+
+  def versionNotes(notes: String): ConfBuilder = {
+    this.versionInfo = this.versionInfo.copy(notes = notes)
     this
   }
 
@@ -575,6 +602,9 @@ val GPU_COREDUMP_PIPE_PATTERN = conf("spark.rapids.gpu.coreDump.pipePattern")
         "spark.rapids.memory.host.offHeapLimit.size, which will take precedence if set.")
     .startupOnly()
     .commonlyUsed()
+    .versionNotes("Deprecated in favor of spark.rapids.memory.host.offHeapLimit.enabled/" +
+      "spark.rapids.memory.host.offHeapLimit.size. The off-heap limit configs take precedence " +
+      "when enabled.")
     .bytesConf(ByteUnit.BYTE)
     .createWithDefault(-1)
 
@@ -3134,14 +3164,14 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
 
   private def printToggleHeader(category: String): Unit = {
     printSectionHeader(category)
-    println("Name | Description | Default Value | Notes")
-    println("-----|-------------|---------------|------------------")
+    println("Name | Description | Default Value | Notes | Since Version | Version Notes")
+    println("-----|-------------|---------------|-------|---------------|--------------")
   }
 
   private def printToggleHeaderWithSqlFunction(category: String): Unit = {
     printSectionHeader(category)
-    println("Name | SQL Function(s) | Description | Default Value | Notes")
-    println("-----|-----------------|-------------|---------------|------")
+    println("Name | SQL Function(s) | Description | Default Value | Notes | Since Version | Version Notes")
+    println("-----|-----------------|-------------|---------------|-------|---------------|--------------")
   }
 
   def help(asTable: Boolean = false): Unit = {
@@ -3179,11 +3209,14 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
         | work if they are set at runtime. Please check the column of "Applicable at" to see
         | when the config can be set. "Startup" means only valid on startup, "Runtime" means
         | valid on both startup and runtime.
+        |
+        | The "Since Version" column shows when version compatibility metadata is available for
+        | a config. "Unknown" means the metadata has not been recorded yet.
         |""".stripMargin)
       // scalastyle:on line.size.limit
       println("\n## General Configuration\n")
-      println("Name | Description | Default Value | Applicable at")
-      println("-----|-------------|--------------|--------------")
+      println("Name | Description | Default Value | Applicable at | Since Version | Version Notes")
+      println("-----|-------------|--------------|---------------|---------------|--------------")
     } else {
       println("Commonly Used Rapids Configs:")
     }
@@ -3217,14 +3250,19 @@ val SHUFFLE_COMPRESSION_LZ4_CHUNK_SIZE = conf("spark.rapids.shuffle.compression.
         |
         |The following configuration options are supported by the RAPIDS Accelerator for Apache Spark.
         |
+        | The "Since Version" column shows when version compatibility metadata is available for
+        | a config. "Unknown" means the metadata has not been recorded yet. The "Version Notes"
+        | column calls out deprecations, replacements, removals, or other compatibility caveats
+        | when known.
+        |
         |For commonly used configurations and examples of setting options, please refer to the
         |[RAPIDS Accelerator for Configuration](../configs.md) page.
         |""".stripMargin)
       // scalastyle:on line.size.limit
       println("\n## Advanced Configuration\n")
 
-      println("Name | Description | Default Value | Applicable at")
-      println("-----|-------------|--------------|--------------")
+      println("Name | Description | Default Value | Applicable at | Since Version | Version Notes")
+      println("-----|-------------|--------------|---------------|---------------|--------------")
     } else {
       println("Advanced Rapids Configs:")
     }
