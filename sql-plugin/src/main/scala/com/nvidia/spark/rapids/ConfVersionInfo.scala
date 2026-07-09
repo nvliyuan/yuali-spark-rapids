@@ -303,7 +303,7 @@ object ConfVersionInfo {
     "spark.rapids.sql.expression.MicrosToTimestamp" -> "v23.08.1",
     "spark.rapids.sql.expression.MillisToTimestamp" -> "v23.08.1",
     "spark.rapids.sql.expression.Min" -> "v0.1.0",
-    "spark.rapids.sql.expression.MinBy" -> "Unreleased",
+    "spark.rapids.sql.expression.MinBy" -> "v24.10.0",
     "spark.rapids.sql.expression.Minute" -> "v21.06.0",
     "spark.rapids.sql.expression.MonotonicallyIncreasingID" -> "v21.06.0",
     "spark.rapids.sql.expression.Month" -> "v0.1.0",
@@ -476,8 +476,8 @@ object ConfVersionInfo {
     "spark.rapids.sql.json.read.decimal.enabled" -> "v22.04.0",
     "spark.rapids.sql.json.read.double.enabled" -> "v22.04.0",
     "spark.rapids.sql.json.read.float.enabled" -> "v22.04.0",
-    "spark.rapids.sql.lore.dumpPath" -> "Unreleased",
-    "spark.rapids.sql.lore.idsToDump" -> "Unreleased",
+    "spark.rapids.sql.lore.dumpPath" -> "v24.08.1",
+    "spark.rapids.sql.lore.idsToDump" -> "v24.08.1",
     "spark.rapids.sql.lore.nonStrictMode.enabled" -> "v26.06.0",
     "spark.rapids.sql.lore.parquet.useOriginalSchemaNames" -> "v25.10.0",
     "spark.rapids.sql.metrics.level" -> "v21.06.0",
@@ -513,7 +513,7 @@ object ConfVersionInfo {
     "spark.rapids.sql.window.range.float.enabled" -> "v23.08.1",
     "spark.rapids.sql.window.range.int.enabled" -> "v21.06.0",
     "spark.rapids.sql.window.range.long.enabled" -> "v21.06.0",
-    "spark.rapids.sql.window.range.short.enabled" -> "v21.06.0"
+    "spark.rapids.sql.window.range.short.enabled" -> "v21.06.0",
   )
 
   def forKey(key: String): ConfVersionInfo = {
