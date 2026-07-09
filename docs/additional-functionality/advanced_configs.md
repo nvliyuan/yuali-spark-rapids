@@ -21,7 +21,6 @@ The "Since Version" column shows the first RAPIDS Accelerator release known to s
 the config. "Unreleased" means the config exists on this branch but is not in a tagged
 release yet. "Unknown" means the metadata has not been recorded yet.
 
-
 For commonly used configurations and examples of setting options, please refer to the
 [RAPIDS Accelerator for Configuration](../configs.md) page.
 

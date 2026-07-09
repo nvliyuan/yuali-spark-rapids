@@ -37,7 +37,6 @@ the config. "Unreleased" means the config exists on this branch but is not in a 
 release yet. "Unknown" means the metadata has not been recorded yet.
 
 
-
 ## General Configuration
 
 Name | Description | Default Value | Applicable at | Since Version

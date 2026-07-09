@@ -129,6 +129,14 @@ abstract class ConfEntry[T](val key: String, val converter: String => T, val doc
   def get(conf: SQLConf): T
   def help(asTable: Boolean = false): Unit
 
+  protected def effectiveVersionInfo: ConfVersionInfo = {
+    if (versionInfo.sinceVersion == ConfVersionInfo.UNKNOWN_VERSION) {
+      ConfVersionInfo.forKey(key)
+    } else {
+      versionInfo
+    }
+  }
+
   override def toString: String = key
 }
 
@@ -157,7 +165,7 @@ class ConfEntryWithDefault[T](key: String, converter: String => T, doc: String,
       if (asTable) {
         import ConfHelper.makeConfAnchor
         println(s"${makeConfAnchor(key)}|$doc|$defaultValue|$startupOnlyStr|" +
-          s"${versionInfo.sinceVersion}")
+          s"${effectiveVersionInfo.sinceVersion}")
       } else {
         println(s"$key:")
         println(s"\t$doc")
@@ -194,7 +202,7 @@ class OptionalConfEntry[T](key: String, val rawConverter: String => T, doc: Stri
       if (asTable) {
         import ConfHelper.makeConfAnchor
         println(s"${makeConfAnchor(key)}|$doc|None|$startupOnlyStr|" +
-          s"${versionInfo.sinceVersion}")
+          s"${effectiveVersionInfo.sinceVersion}")
       } else {
         println(s"$key:")
         println(s"\t$doc")
