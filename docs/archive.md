@@ -5,6 +5,8 @@ nav_order: 15
 ---
 Below are archived releases for RAPIDS Accelerator for Apache Spark.
 
+[Planted missing local file](./lychee-file-that-does-not-exist.md)
+
 ## Release v26.08.1
 ### Hardware Requirements:
 
